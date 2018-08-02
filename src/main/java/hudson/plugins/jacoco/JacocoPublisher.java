@@ -78,6 +78,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     private String inclusionPattern;
     private String exclusionPattern;
     private boolean skipCopyOfSrcFiles; // Added for enabling/disabling copy of source files
+    private boolean failIfFilesNotFound;
 
     private String minimumInstructionCoverage;
     private String minimumBranchCoverage;
@@ -119,6 +120,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
         this.inclusionPattern = "";
         this.exclusionPattern = "";
         this.skipCopyOfSrcFiles = false;
+        this.failIfFilesNotFound = true;
         this.minimumInstructionCoverage = "0";
         this.minimumBranchCoverage = "0";
         this.minimumComplexityCoverage = "0";
@@ -171,7 +173,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
 	 * @param buildOverBuild deprecated
      */
     @Deprecated
-    public JacocoPublisher(String execPattern, String classPattern, String sourcePattern, String inclusionPattern, String exclusionPattern, boolean skipCopyOfSrcFiles, String maximumInstructionCoverage, String maximumBranchCoverage
+    public JacocoPublisher(String execPattern, String classPattern, String sourcePattern, String inclusionPattern, String exclusionPattern, boolean skipCopyOfSrcFiles, boolean failIfFilesNotFound, String maximumInstructionCoverage, String maximumBranchCoverage
     		, String maximumComplexityCoverage, String maximumLineCoverage, String maximumMethodCoverage, String maximumClassCoverage, String minimumInstructionCoverage, String minimumBranchCoverage
     		, String minimumComplexityCoverage, String minimumLineCoverage, String minimumMethodCoverage, String minimumClassCoverage, boolean changeBuildStatus,
                            String deltaInstructionCoverage, String deltaBranchCoverage, String deltaComplexityCoverage, String deltaLineCoverage, String deltaMethodCoverage, String deltaClassCoverage, boolean buildOverBuild) {
@@ -181,6 +183,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     	this.inclusionPattern = inclusionPattern;
     	this.exclusionPattern = exclusionPattern;
         this.skipCopyOfSrcFiles = skipCopyOfSrcFiles;
+        this.failIfFilesNotFound = failIfFilesNotFound;
     	this.minimumInstructionCoverage = minimumInstructionCoverage;
     	this.minimumBranchCoverage = minimumBranchCoverage;
     	this.minimumComplexityCoverage = minimumComplexityCoverage;
@@ -277,6 +280,10 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
 
     public boolean isSkipCopyOfSrcFiles() {
         return skipCopyOfSrcFiles;
+    }
+
+    public boolean shouldFailIfFilesNotFound() {
+        return failIfFilesNotFound;
     }
 
 	public String getMinimumInstructionCoverage() {
@@ -415,6 +422,11 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
     @DataBoundSetter
     public void setSkipCopyOfSrcFiles(boolean skipCopyOfSrcFiles) {
         this.skipCopyOfSrcFiles = skipCopyOfSrcFiles;
+    }
+
+    @DataBoundSetter
+    public void setFailIfFilesNotFound(boolean failIfFilesNotFound) {
+        this.failIfFilesNotFound = failIfFilesNotFound;
     }
 
     @DataBoundSetter
@@ -654,7 +666,7 @@ public class JacocoPublisher extends Recorder implements SimpleBuildStep {
             logger.println("[JaCoCo plugin] exclusions: " + Arrays.toString(excludes));
         }
 
-        final JacocoBuildAction action = JacocoBuildAction.load(run, healthReports, taskListener, reportDir, includes, excludes);
+        final JacocoBuildAction action = JacocoBuildAction.load(run, healthReports, taskListener, reportDir, includes, excludes, failIfFilesNotFound);
         action.getThresholds().ensureValid();
         logger.println("[JaCoCo plugin] Thresholds: " + action.getThresholds());
         run.addAction(action);

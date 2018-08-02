@@ -97,7 +97,7 @@ public class JacocoReportDir {
      * @return the configured {@code ExecutionFileLoader}
      * @throws IOException if any I/O error occurs
      */
-    public ExecutionFileLoader parse(String[] includes, String... excludes) throws IOException {
+    public ExecutionFileLoader parse(boolean failIfFilesNotFound, String[] includes, String... excludes) throws IOException {
         ExecutionFileLoader efl = new ExecutionFileLoader();
         for (File exec : getExecFiles()) {
             efl.addExecFile(new FilePath(exec));
@@ -107,6 +107,7 @@ public class JacocoReportDir {
         efl.setExcludes(excludes);
         efl.setClassDir(new FilePath(getClassesDir()));
         efl.setSrcDir(new FilePath(getSourcesDir()));
+        efl.setFailIfFilesNotFound(failIfFilesNotFound);
         efl.loadBundleCoverage();
 
         return efl;

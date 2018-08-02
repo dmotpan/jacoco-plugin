@@ -51,6 +51,7 @@ public final class JacocoBuildAction extends CoverageObject<JacocoBuildAction> i
 	private final transient PrintStream logger;
 	@Deprecated private transient ArrayList<?> reports;
 	private transient WeakReference<CoverageReport> report;
+	private final boolean failIfFilesNotFound;
 	private final String[] inclusions;
 	private final String[] exclusions;
  
@@ -71,17 +72,19 @@ public final class JacocoBuildAction extends CoverageObject<JacocoBuildAction> i
 	 * @param listener
 	 *            The listener from which we get logger
 	 * @param inclusions
-	 *            See {@link JacocoReportDir#parse(String[], String...)}
+	 *            See {@link JacocoReportDir#parse(boolean, String[], String...)}
 	 * @param exclusions
-	 *            See {@link JacocoReportDir#parse(String[], String...)}
+	 *            See {@link JacocoReportDir#parse(boolean, String[], String...)}
 	 */
 	public JacocoBuildAction(
 			Map<CoverageElement.Type, Coverage> ratios,
-			JacocoHealthReportThresholds thresholds, TaskListener listener, String[] inclusions, String[] exclusions) {
+			JacocoHealthReportThresholds thresholds, TaskListener listener, boolean failIfFilesNotFound,
+			String[] inclusions, String[] exclusions) {
 		logger = listener.getLogger();
 		if (ratios == null) {
 			ratios = Collections.emptyMap();
 		}
+		this.failIfFilesNotFound = failIfFilesNotFound;
 		this.inclusions = inclusions != null ? Arrays.copyOf(inclusions, inclusions.length) : null;
 		this.exclusions = exclusions != null ? Arrays.copyOf(exclusions, exclusions.length) : null;
 		this.clazz = getOrCreateRatio(ratios, CoverageElement.Type.CLASS);
@@ -234,7 +237,7 @@ public final class JacocoBuildAction extends CoverageObject<JacocoBuildAction> i
 		final JacocoReportDir reportFolder = getJacocoReport();
 
 		try {
-			CoverageReport r = new CoverageReport(this, reportFolder.parse(inclusions, exclusions));
+			CoverageReport r = new CoverageReport(this, reportFolder.parse(failIfFilesNotFound, inclusions, exclusions));
 			report = new WeakReference<>(r);
 			r.setThresholds(thresholds);
 			return r;
@@ -312,31 +315,31 @@ public final class JacocoBuildAction extends CoverageObject<JacocoBuildAction> i
 	 * @param layout
 	 *             The object parsing the saved "jacoco.exec" files 
      * @param includes
-     *            See {@link JacocoReportDir#parse(String[], String...)}
+     *            See {@link JacocoReportDir#parse(boolean, String[], String...)}
      * @param excludes
-     *            See {@link JacocoReportDir#parse(String[], String...)}
+     *            See {@link JacocoReportDir#parse(boolean, String[], String...)}
 	 * @return new {@code JacocoBuildAction} from JaCoCo exec files
 	 * @throws IOException
 	 *      if failed to parse the file.
 	 */
-	public static JacocoBuildAction load(Run<?,?> owner, JacocoHealthReportThresholds thresholds, TaskListener listener, JacocoReportDir layout, String[] includes, String[] excludes) throws IOException {
+	public static JacocoBuildAction load(Run<?,?> owner, JacocoHealthReportThresholds thresholds, TaskListener listener, JacocoReportDir layout, String[] includes, String[] excludes, boolean failIfFilesNotFound) throws IOException {
 		//PrintStream logger = listener.getLogger();
 		Map<CoverageElement.Type,Coverage> ratios = null;
 		
-	    ratios = loadRatios(layout, ratios, includes, excludes);
-		return new JacocoBuildAction(ratios, thresholds, listener, includes, excludes);
+	    ratios = loadRatios(layout, ratios, failIfFilesNotFound, includes, excludes);
+		return new JacocoBuildAction(ratios, thresholds, listener, failIfFilesNotFound, includes, excludes);
 	}
 
 
 	/**
 	 * Extracts top-level coverage information from the JaCoCo report document.
 	 */
-	private static Map<Type, Coverage> loadRatios(JacocoReportDir layout, Map<Type, Coverage> ratios, String[] includes, String... excludes) throws IOException {
+	private static Map<Type, Coverage> loadRatios(JacocoReportDir layout, Map<Type, Coverage> ratios, boolean failIfFilesNotFound, String[] includes, String... excludes) throws IOException {
 
 		if (ratios == null) {
 			ratios = new LinkedHashMap<CoverageElement.Type, Coverage>();
 		}
-		ExecutionFileLoader efl = layout.parse(includes, excludes);
+		ExecutionFileLoader efl = layout.parse(failIfFilesNotFound, includes, excludes);
         IBundleCoverage bundleCoverage = efl.getBundleCoverage();
 		Coverage ratio = new Coverage();
 		ratio.accumulatePP(bundleCoverage.getClassCounter().getMissedCount(), bundleCoverage.getClassCounter().getCoveredCount());
